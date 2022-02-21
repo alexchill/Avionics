@@ -2,6 +2,10 @@
 
 TBS
 
+## Required Arduino Libraries
+
+- USB Shield 2.0
+
 ## Maintainers
 
-- Alex Hill
+- Alex Hill @alexchill
