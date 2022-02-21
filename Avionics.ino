@@ -2,7 +2,7 @@
 #include <Servo.h>
 
 // Define misc constants
-const int LOOP_DELAY = 50;
+const int LOOP_DELAY = 20;
 
 // Configure constants for I/O pin numbers
 const int NAV_LED_PIN = 8;
@@ -28,6 +28,7 @@ const char CMD_HALT[] = "HALT";
 const char CMD_REPEAT[] = "REPEAT";
 
 // Simulation commands
+const bool USE_SIMULATED_COMMANDS = true;
 int cmdNdx = 0;
 String COMMANDS[] = {
   "ROLL:30",
@@ -61,24 +62,62 @@ void setup() {
 void loop() {
   String cmd = getCommand();
   executeCommand(cmd);
-  delay(LOOP_DELAY);
+  Serial.flush();
+  // delay(LOOP_DELAY);
 }
 
 // This a "simulation" implementation of getCommand
 String getCommand() {
+  String cmd;
+  if (USE_SIMULATED_COMMANDS) {
+    cmd = getSimulatedCommand();
+  }
+  else {
+    cmd = getCommandSerial();
+  }
+
+  return cmd;
+}
+
+String getSimulatedCommand() {
   String cmd = COMMANDS[cmdNdx];
+
   if (cmd == CMD_HALT) {
     return CMD_NOP;
-  } else {
+  }
+  else {
     cmdNdx++;
   }
+
+  return cmd;
+}
+
+String getCommandSerial() {
+  String cmd;
+  int ch;
+
+  if (Serial.available() > 0) {
+    ch = Serial.read();
+    // Serial.print("read input ");
+    // Serial.println(ch);
+
+    if (ch == 'w') {
+      cmd = CMD_PITCHINC;
+      cmd.concat(":4");
+    }
+    else if (ch == 's') {
+      cmd = CMD_PITCHDEC;
+      cmd.concat(":4");
+    }
+  }
+  else {
+    cmd = CMD_NOP;
+  }
+
   return cmd;
 }
 
 void executeCommand(String command) {
-  Serial.print("Executing cmd: ");
-  Serial.println(command);
-
   String cmdName;
   String cmdValueStr;
 
@@ -101,16 +140,25 @@ void executeCommand(String command) {
     // Nothing to do
     return;
   }
-  else if (cmdName == CMD_ROLL) {
+
+  Serial.print("Executing cmd: ");
+  Serial.println(command);
+
+  if (cmdName == CMD_ROLL) {
     int rollValue = cmdValueStr.toInt();
     // command RollServo to rollValue
-  } 
+  }
   else if (cmdName == CMD_PITCHDEC) {
     int decValue = cmdValueStr.toInt();
     // command RollServo to rollValue
     if (PitchPos - decValue >= ROLL_MIN) {
       PitchPos -= decValue;
       rollServo.write(PitchPos);
+      Serial.print("PITCH: ");
+      Serial.println(PitchPos);
+    }
+    else {
+      Serial.println("PITCH: MIN LIMIT");
     }
   }
   else if (cmdName == CMD_PITCHINC) {
@@ -119,6 +167,11 @@ void executeCommand(String command) {
     if (PitchPos + incValue <= ROLL_MAX) {
       PitchPos += incValue;
       rollServo.write(PitchPos);
+      Serial.print("PITCH: ");
+      Serial.println(PitchPos);
+    }
+    else {
+      Serial.println("PITCH: MAX LIMIT");
     }
   }
   else if (cmdName == CMD_NAVLED) {
