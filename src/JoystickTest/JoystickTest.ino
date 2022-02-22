@@ -34,7 +34,7 @@ void setup()
   
   Serial.println("Serial port connected, starting setup...");
 
-  servoX.attach(xPin, 1000, 2000);
+  servoX.attach(xPin, 500, 2500);
   servoY.attach(yPin, 500, 2500);
 
 
@@ -56,8 +56,7 @@ void loop()
   uint16_t valX = map(JoystickEvents::mostRecentEvent.x, 0, 1023, 0, 180);
   uint16_t valY = map(JoystickEvents::mostRecentEvent.y, 0, 1023, 0, 180);
   uint16_t valS = map(JoystickEvents::mostRecentEvent.slider, 0, 255, 100, 0);
-  Serial.println(valY);
-  
+
   servoX.write(valX);
   servoY.write(valY);
   delay(15);
