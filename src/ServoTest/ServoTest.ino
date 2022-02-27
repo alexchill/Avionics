@@ -55,10 +55,9 @@ void loop()
     }
     else if (roll <= 0)
     {
+        // Done with test - do nothing until a reset
         while (1)
-        {
             delay(5000);
-        }
     }
 
     Serial.print("Roll: ");
