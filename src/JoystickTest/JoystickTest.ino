@@ -3,7 +3,6 @@
 #include <usbhid.h>
 #include <hiduniversal.h>
 #include <usbhub.h>
-#include <Servo.h>
 
 #include "le3dp_rptparser.h"
 
@@ -19,9 +18,6 @@ HIDUniversal Hid(&Usb);
 JoystickEvents JoyEvents;
 JoystickReportParser Joy(&JoyEvents);
 
-Servo servoX;
-Servo servoY;
-
 void setup()
 {
     Serial.begin(115200);
@@ -30,13 +26,7 @@ void setup()
         ; // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
 #endif
 
-    int xPin = 13;
-    int yPin = 12;
-
     Serial.println("Serial port connected, starting setup...");
-
-    servoX.attach(xPin, 500, 2500);
-    servoY.attach(yPin, 500, 2500);
 
     Serial.println("Initiaing USB...");
     if (Usb.Init() == -1)
@@ -56,9 +46,9 @@ void loop()
     uint16_t valX = map(JoystickEvents::mostRecentEvent.x, 0, 1023, 0, 180);
     uint16_t valY = map(JoystickEvents::mostRecentEvent.y, 0, 1023, 0, 180);
     uint16_t valS = map(JoystickEvents::mostRecentEvent.slider, 0, 255, 100, 0);
+    uint16_t valT = map(JoystickEvents::mostRecentEvent.twist, 0, 255, 0, 180);
 
-    servoX.write(valX);
-    servoY.write(valY);
+    Serial.println(valT);
 
     delay(15);
 }

@@ -27,6 +27,13 @@ void setup() {
 
 void loop() {
   const char text[] = "Hi";
-  radio.write(&text, sizeof(text));
+  if (radio.write(&text, sizeof(text))) {
+    Serial.println("transmitted");
+  }
+  else
+  {
+    Serial.println("fail");
+  }
+
   delay(5000);
 }
