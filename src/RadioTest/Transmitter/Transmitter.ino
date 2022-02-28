@@ -2,7 +2,7 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-RF24 radio(8, 9);
+RF24 radio(6, 7);
 
 const byte address[6] = "00001";
 

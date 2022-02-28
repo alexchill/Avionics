@@ -39,7 +39,7 @@ void loop()
     static int pitch = 0;
     static int yaw = 0;
 
-    // servoRoll.write(roll);
+    servoRoll.write(roll);
     delay(10);
     servoPitch.write(pitch);
     delay(10);
