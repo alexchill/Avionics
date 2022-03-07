@@ -22,17 +22,14 @@ JoystickEvents JoyEvents;
 JoystickReportParser Joy(&JoyEvents);
 
 RF24 radio(6, 7);
-
-const byte address[6] = "00001";
+const uint8_t RadioAddress[6] = "00001";
 
 void setup()
 {
   Serial.begin(115200);
-#if !defined(__MIPSEL__)
-  while (!Serial)
-    ; // some boards need to wait to ensure access to serial over USB
-#endif
-  Serial.println("Serial port connected, starting setup...");
+  // some boards need to wait to ensure access to serial over USB
+  while (!Serial);
+  Serial.println("Serial port connected, starting GROUND avionics setup...");
 
   Serial.println("Initiaing USB...");
   if (Usb.Init() == -1)
@@ -44,48 +41,96 @@ void setup()
 
   Serial.println("Setting up radio");
   if (!radio.begin()) {
-    Serial.println(F("radio hardware is not responding!!"));
-    while (1) {} // hold in infinite loop
-  }
-  Serial.println(F("radio hardware is responding!!"));
+    Serial.println(F("Radio hardware is not responding!!"));
 
-  radio.openWritingPipe(address);
+    // hold in infinite loop
+    while (1);
+  }
+  Serial.println(F("Radio hardware is responding!!"));
+
   radio.setPALevel(RF24_PA_LOW);
   //radio.setDataRate(RF24_250KBPS);
+
+  Serial.print("Radio channel is set to: ");
+  Serial.println(radio.getChannel());
+  Serial.print("Radio data rate is set to: ");
+  Serial.println(radio.getDataRate());
+
   radio.stopListening();
-  //defaultValue();
+  radio.openWritingPipe(RadioAddress);
+
   Serial.println("Radio setup complete");
+  Serial.println("Waiting to arm joystick");
 }
 
 void loop()
 {
+  static unsigned long loopStartTimeMS = millis();
+  static unsigned long lastSignalTestTime = millis();
   static int prevId = -1;
+  static bool joystickArmed = false;
+
+  unsigned long nowMs = millis();
+  if (nowMs > lastSignalTestTime + 30000)
+  {
+    lastSignalTestTime = nowMs;
+    bool goodSignal = radio.testRPD();
+    Serial.println(goodSignal ? "Strong signal > 64dBm" : "Weak signal < 64dBm" );
+  }
 
   Usb.Task();
 
+//  // Simple test sequence for one servo
+//  Commands cmd;
+//  cmd.throttle = 0;
+//  cmd.roll = cmd.pitch = cmd.yaw = 0;
+//  radio.write(&cmd, sizeof(Commands));
+//  Serial.println("transmitted");
+//  delay(1000);
+//  cmd.roll = cmd.pitch = cmd.yaw = 30;
+//  radio.write(&cmd, sizeof(Commands));
+//  Serial.println("transmitted");
+//  delay(1000);
+//  return;
+
+  // Don't send joystick data for the first 10 seconds after USB initializes
+  // due to spuriuos data from the joystick.
+  if (!joystickArmed && (millis() > loopStartTimeMS + 10000))
+  {
+    joystickArmed = true;
+    Serial.println("Joystick is armed");
+  }
+
+  // Don't send joystick data unless it has changed and is armed
   GamePadEventData mostRecentEvent = JoystickEvents::mostRecentEvent;
+  if ((mostRecentEvent.id != prevId) && joystickArmed) {
+    prevId = mostRecentEvent.id;
 
-  if (mostRecentEvent.id != prevId) {
     Commands cmd;
-
     cmd.roll = map(JoystickEvents::mostRecentEvent.x, 0, 1023, 0, 180);
     cmd.pitch = map(JoystickEvents::mostRecentEvent.y, 0, 1023, 0, 180);
     cmd.yaw = map(JoystickEvents::mostRecentEvent.twist, 0, 255, 0, 180);
-    cmd.throttle = map(JoystickEvents::mostRecentEvent.slider, 0, 255, 100, 0);
+    cmd.throttle = map(JoystickEvents::mostRecentEvent.slider, 0, 255, 180, 0);
 
     Serial.println(toString(&cmd));
-    
-    const char text[] = "HiDude";
+
     if (radio.write(&cmd, sizeof(Commands))) {
       Serial.println("transmitted");
     }
     else
     {
       Serial.println("fail");
+//      radio.printPrettyDetails();
+//      bool tx_ok, tx_fail, tx_ready;
+//      radio.whatHappened(tx_ok, tx_fail, tx_ready);
+//      Serial.print("tx_ok: ");
+//      Serial.print(tx_ok);
+//      Serial.print(", tx_fail: ");
+//      Serial.print(tx_fail);
+//      Serial.print(", tx_ready: ");
+//      Serial.println(tx_ready);
     }
-
-    prevId = mostRecentEvent.id;
   }
 
-  delay(100);
+  delay(50);
 }
