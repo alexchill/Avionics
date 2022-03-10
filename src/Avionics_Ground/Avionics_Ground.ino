@@ -80,19 +80,6 @@ void loop()
 
   Usb.Task();
 
-//  // Simple test sequence for one servo
-//  Commands cmd;
-//  cmd.throttle = 0;
-//  cmd.roll = cmd.pitch = cmd.yaw = 0;
-//  radio.write(&cmd, sizeof(Commands));
-//  Serial.println("transmitted");
-//  delay(1000);
-//  cmd.roll = cmd.pitch = cmd.yaw = 30;
-//  radio.write(&cmd, sizeof(Commands));
-//  Serial.println("transmitted");
-//  delay(1000);
-//  return;
-
   // Don't send joystick data for the first 10 seconds after USB initializes
   // due to spuriuos data from the joystick.
   if (!joystickArmed && (millis() > loopStartTimeMS + 10000))
@@ -120,15 +107,6 @@ void loop()
     else
     {
       Serial.println("fail");
-//      radio.printPrettyDetails();
-//      bool tx_ok, tx_fail, tx_ready;
-//      radio.whatHappened(tx_ok, tx_fail, tx_ready);
-//      Serial.print("tx_ok: ");
-//      Serial.print(tx_ok);
-//      Serial.print(", tx_fail: ");
-//      Serial.print(tx_fail);
-//      Serial.print(", tx_ready: ");
-//      Serial.println(tx_ready);
     }
   }
 

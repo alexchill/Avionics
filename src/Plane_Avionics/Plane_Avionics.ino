@@ -16,6 +16,8 @@ const int ServoYawPin = 8;
 const int MotorPin = 11;
 const int MotorInitThrottle = 0;
 
+const int NavLedsPin = 13;
+
 int ServoRollCenter = 90;
 int ServoPitchCenter = 90;
 int ServoYawCenter = 90;
@@ -44,6 +46,9 @@ void setup()
 
   motor1.attach(MotorPin, 1000, 2000);
   motor1.write(MotorInitThrottle);
+
+  // Turn on by default, use buttons to turn on and off
+  digitalWrite(NavLedsPin, HIGH);
 
   if (!radio.begin())
   {
