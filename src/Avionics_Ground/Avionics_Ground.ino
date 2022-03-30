@@ -48,7 +48,7 @@ void setup()
   }
   Serial.println(F("Radio hardware is responding!!"));
 
-  radio.setPALevel(RF24_PA_LOW);
+  radio.setPALevel(RF24_PA_MAX);
   //radio.setDataRate(RF24_250KBPS);
 
   Serial.print("Radio channel is set to: ");
