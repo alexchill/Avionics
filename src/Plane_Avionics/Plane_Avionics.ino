@@ -10,11 +10,15 @@ const unsigned long LastRadioMessageReceivedTimeoutMS = 10000;
 RF24 radio(9, 10);
 const uint8_t RadioAddress[6] = "00001";
 
+// Digital pin
 const int ServoRollPin = 3;
 const int ServoPitchPin = 5;
 const int ServoYawPin = 8;
 const int MotorPin = 11;
 const int MotorInitThrottle = 0;
+
+// Analog pin
+const int BATT_MEAS_PIN = 0;
 
 const int NavLedsPin = 13;
 
@@ -27,14 +31,32 @@ Servo servoPitch;
 Servo servoYaw;
 Servo motor1;
 
+const float MAX_MEAS_VOLT = 5; // max voltage arduino analog input will handle
+const int AIN_ADC_BITS = 10;   // analog number analog/digital convert number of bits
+const float AIN_VOLT_PER_UNIT = MAX_MEAS_VOLT / pow(2, AIN_ADC_BITS);
+
+const float BATT_VOLT_MAX = 12;
+
+const float BATT_MEAS_R1 = 2 * 9.89e3;
+const float BATT_MEAS_R2 = 9.85e3;
+const float BATT_MEAS_RA = 100e6;
+
+// total resistance of resistor 2 and analog input impedance in parallel
+const float BATT_MEAS_R2T = (BATT_MEAS_RA * BATT_MEAS_R2) / (BATT_MEAS_RA - BATT_MEAS_R2);
+const float BATT_MEAS_DIV = (BATT_MEAS_R1 / BATT_MEAS_R2T) + 1;
+const float BATT_MEAS_MAX_CURRENT = BATT_VOLT_MAX / (BATT_MEAS_R1 + BATT_MEAS_R2T);
+
+static int batteryTime = 5000;
+
 void setup()
 {
   Serial.begin(115200);
 
   // some boards need to wait to ensure access to serial over USB
-  while (!Serial);
+  while (!Serial)
+    ;
   Serial.println("Serial port connected, starting PLANE avionics setup...");
-  
+
   servoRoll.attach(ServoRollPin, 500, 2500);
   servoRoll.write(ServoRollCenter);
 
@@ -56,14 +78,15 @@ void setup()
     radio.printPrettyDetails();
 
     // hold in infinite loop if radio is not responding
-    while (1);
+    while (1)
+      ;
   }
 
   Serial.println(F("Radio hardware is responding!!"));
 
   // Configure radio
   radio.setPALevel(RF24_PA_MAX);
-  //radio.setDataRate(RF24_250KBPS);
+  // radio.setDataRate(RF24_250KBPS);
 
   Serial.print("Radio channel is set to: ");
   Serial.println(radio.getChannel());
@@ -72,6 +95,8 @@ void setup()
 
   radio.openReadingPipe(0, RadioAddress);
   radio.startListening();
+
+  checkBattMeasAnalogInVoltage();
 }
 
 void loop()
@@ -86,7 +111,7 @@ void loop()
   {
     lastSignalTestTime = nowMs;
     bool goodSignal = radio.testRPD();
-    Serial.println(goodSignal ? "Strong signal > 64dBm" : "Weak signal < 64dBm" );
+    Serial.println(goodSignal ? "Strong signal > 64dBm" : "Weak signal < 64dBm");
   }
 
   if (radio.available())
@@ -96,21 +121,21 @@ void loop()
 
     lastRadioMsgReceivedMS = millis();
     inSafetyShutdownMode = false;
-    
-    Serial.print("Roll: ");
-    Serial.println(cmd.roll);
+
+    //        Serial.print("Roll: ");
+    //        Serial.println(cmd.roll);
     servoRoll.write(cmd.roll);
 
-    Serial.print("Pitch: ");
-    Serial.println(cmd.pitch);
+    //        Serial.print("Pitch: ");
+    //        Serial.println(cmd.pitch);
     servoPitch.write(cmd.pitch);
 
-    Serial.print("Yaw: ");
-    Serial.println(cmd.yaw);
+    //        Serial.print("Yaw: ");
+    //        Serial.println(cmd.yaw);
     servoYaw.write(cmd.yaw);
 
-    Serial.print("Throttle: ");
-    Serial.println(cmd.throttle);
+    //        Serial.print("Throttle: ");
+    //        Serial.println(cmd.throttle);
     motor1.write(cmd.throttle);
   }
 
@@ -129,5 +154,42 @@ void loop()
     Serial.println(" ms, going into safety shutdown mode");
   }
 
+  if (millis() > batteryTime) {
+    BatteryLoop();
+    batteryTime = batteryTime + 5000;
+  }
+
   delay(25);
+}
+
+void BatteryLoop()
+{
+  float battVolt = measureBattVolt();
+  Serial.print("Battery Voltage: ");
+  Serial.println(battVolt);
+}
+
+float measureBattVolt()
+{
+  int val = analogRead(BATT_MEAS_PIN);
+  return computeBattVolt(val);
+}
+
+float computeBattVolt(int adValue)
+{
+  float measVolt = adValue * AIN_VOLT_PER_UNIT;
+  float battVolt = measVolt * BATT_MEAS_DIV;
+  return battVolt;
+}
+
+void checkBattMeasAnalogInVoltage()
+{
+  float maxVoltMeasured = BATT_MEAS_MAX_CURRENT * BATT_MEAS_R2T;
+  Serial.print("Max voltage measured: ");
+  Serial.println(maxVoltMeasured);
+  if (maxVoltMeasured > MAX_MEAS_VOLT)
+  {
+    Serial.print("Battery monitor resistor values allow max analog input voltage to be exceeded: ");
+    Serial.println(maxVoltMeasured);
+  }
 }
