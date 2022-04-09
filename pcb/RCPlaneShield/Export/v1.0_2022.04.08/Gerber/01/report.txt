@@ -1,0 +1,9 @@
+Plotted to 'C:\Users\Keith\Documents\KiCad\FRHS-RC-Plane\RCPlaneShield\Export\v1.0_2022.04.08\Gerber\01\RCPlaneShield-F_Cu.gbr'.
+Plotted to 'C:\Users\Keith\Documents\KiCad\FRHS-RC-Plane\RCPlaneShield\Export\v1.0_2022.04.08\Gerber\01\RCPlaneShield-B_Cu.gbr'.
+Plotted to 'C:\Users\Keith\Documents\KiCad\FRHS-RC-Plane\RCPlaneShield\Export\v1.0_2022.04.08\Gerber\01\RCPlaneShield-F_Silkscreen.gbr'.
+Plotted to 'C:\Users\Keith\Documents\KiCad\FRHS-RC-Plane\RCPlaneShield\Export\v1.0_2022.04.08\Gerber\01\RCPlaneShield-B_Silkscreen.gbr'.
+Plotted to 'C:\Users\Keith\Documents\KiCad\FRHS-RC-Plane\RCPlaneShield\Export\v1.0_2022.04.08\Gerber\01\RCPlaneShield-F_Mask.gbr'.
+Plotted to 'C:\Users\Keith\Documents\KiCad\FRHS-RC-Plane\RCPlaneShield\Export\v1.0_2022.04.08\Gerber\01\RCPlaneShield-B_Mask.gbr'.
+Plotted to 'C:\Users\Keith\Documents\KiCad\FRHS-RC-Plane\RCPlaneShield\Export\v1.0_2022.04.08\Gerber\01\RCPlaneShield-Edge_Cuts.gbr'.
+Created Gerber job file 'C:\Users\Keith\Documents\KiCad\FRHS-RC-Plane\RCPlaneShield\Export\v1.0_2022.04.08\Gerber\01\RCPlaneShield-job.gbrjob'.
+Info: Done.
