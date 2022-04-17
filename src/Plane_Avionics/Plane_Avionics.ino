@@ -11,10 +11,10 @@ RF24 radio(9, 10);
 const uint8_t RadioAddress[6] = "00001";
 
 // Digital pin
-const int ServoRollPin = 3;
-const int ServoPitchPin = 5;
-const int ServoYawPin = 8;
-const int MotorPin = 11;
+const int ServoRollPin = 12;
+const int ServoPitchPin = 11;
+const int ServoYawPin = 10;
+const int MotorPin = 5;
 const int MotorInitThrottle = 0;
 
 // Analog pin
@@ -37,8 +37,8 @@ const float AIN_VOLT_PER_UNIT = MAX_MEAS_VOLT / pow(2, AIN_ADC_BITS);
 
 const float BATT_VOLT_MAX = 12;
 
-const float BATT_MEAS_R1 = 2 * 9.89e3;
-const float BATT_MEAS_R2 = 9.85e3;
+const float BATT_MEAS_R1 = 4.68e6;
+const float BATT_MEAS_R2 = 1.54e6;
 const float BATT_MEAS_RA = 100e6;
 
 // total resistance of resistor 2 and analog input impedance in parallel
@@ -136,7 +136,7 @@ void loop()
 
     //        Serial.print("Throttle: ");
     //        Serial.println(cmd.throttle);
-    motor1.write(cmd.throttle);
+    motor1.write(0.5               );
   }
 
   // Safety shutdown of motor if lost connectiviy to ground
