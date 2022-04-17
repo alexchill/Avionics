@@ -1,8 +1,8 @@
 #include <Servo.h>
 
-const int rollPin = 3;
-const int pitchPin = 5;
-const int yawPin = 8;
+const int rollPin = 12;
+const int pitchPin = 11;
+const int yawPin = 10;
 
 Servo servoRoll;
 Servo servoPitch;
