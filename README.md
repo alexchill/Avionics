@@ -5,6 +5,7 @@ TBS
 ## Required Arduino Libraries
 
 - USB Shield 2.0
+- NRF
 
 ## Maintainers
 
