@@ -1,4 +1,4 @@
-﻿namespace Arduino_Application
+﻿namespace Avionics_TelemetryApp
 {
     partial class Form1
     {
@@ -28,15 +28,37 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
-            this.serialTextBox = new System.Windows.Forms.TextBox();
+            this._serialTextBox = new System.Windows.Forms.TextBox();
             this.battVoltLabel = new System.Windows.Forms.Label();
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
-            this.splitContainer1.Panel1.SuspendLayout();
-            this.splitContainer1.Panel2.SuspendLayout();
-            this.splitContainer1.SuspendLayout();
+            this.label1 = new System.Windows.Forms.Label();
+            this._portComboBox = new System.Windows.Forms.ComboBox();
+            this.label2 = new System.Windows.Forms.Label();
             this.SuspendLayout();
+            // 
+            // _serialTextBox
+            // 
+            this._serialTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this._serialTextBox.Font = new System.Drawing.Font("Consolas", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this._serialTextBox.Location = new System.Drawing.Point(17, 38);
+            this._serialTextBox.Margin = new System.Windows.Forms.Padding(8);
+            this._serialTextBox.Multiline = true;
+            this._serialTextBox.Name = "_serialTextBox";
+            this._serialTextBox.ReadOnly = true;
+            this._serialTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this._serialTextBox.Size = new System.Drawing.Size(766, 395);
+            this._serialTextBox.TabIndex = 1;
+            this._serialTextBox.WordWrap = false;
+            // 
+            // battVoltLabel
+            // 
+            this.battVoltLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.battVoltLabel.Location = new System.Drawing.Point(130, 9);
+            this.battVoltLabel.Name = "battVoltLabel";
+            this.battVoltLabel.Size = new System.Drawing.Size(73, 21);
+            this.battVoltLabel.TabIndex = 2;
+            this.battVoltLabel.Text = "0.00 V";
             // 
             // label1
             // 
@@ -48,71 +70,53 @@
             this.label1.TabIndex = 0;
             this.label1.Text = "Battery voltage: ";
             // 
-            // serialTextBox
+            // _portComboBox
             // 
-            this.serialTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.serialTextBox.Font = new System.Drawing.Font("Consolas", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.serialTextBox.Location = new System.Drawing.Point(0, 0);
-            this.serialTextBox.Margin = new System.Windows.Forms.Padding(12);
-            this.serialTextBox.Multiline = true;
-            this.serialTextBox.Name = "serialTextBox";
-            this.serialTextBox.ReadOnly = true;
-            this.serialTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.serialTextBox.Size = new System.Drawing.Size(800, 398);
-            this.serialTextBox.TabIndex = 1;
-            this.serialTextBox.WordWrap = false;
+            this._portComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this._portComboBox.FormattingEnabled = true;
+            this._portComboBox.Items.AddRange(new object[] {
+            "COM4",
+            "COM5"});
+            this._portComboBox.Location = new System.Drawing.Point(662, 9);
+            this._portComboBox.Name = "_portComboBox";
+            this._portComboBox.Size = new System.Drawing.Size(121, 23);
+            this._portComboBox.TabIndex = 3;
+            this._portComboBox.SelectedValueChanged += new System.EventHandler(this.portComboBox_SelectedValueChanged);
             // 
-            // battVoltLabel
+            // label2
             // 
-            this.battVoltLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.battVoltLabel.Location = new System.Drawing.Point(128, 10);
-            this.battVoltLabel.Name = "battVoltLabel";
-            this.battVoltLabel.Size = new System.Drawing.Size(100, 21);
-            this.battVoltLabel.TabIndex = 2;
-            this.battVoltLabel.Text = "0.00 V";
-            // 
-            // splitContainer1
-            // 
-            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer1.Name = "splitContainer1";
-            this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer1.Panel1
-            // 
-            this.splitContainer1.Panel1.Controls.Add(this.label1);
-            this.splitContainer1.Panel1.Controls.Add(this.battVoltLabel);
-            // 
-            // splitContainer1.Panel2
-            // 
-            this.splitContainer1.Panel2.Controls.Add(this.serialTextBox);
-            this.splitContainer1.Size = new System.Drawing.Size(800, 450);
-            this.splitContainer1.SplitterDistance = 48;
-            this.splitContainer1.TabIndex = 3;
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(624, 14);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(32, 15);
+            this.label2.TabIndex = 4;
+            this.label2.Text = "Port:";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.splitContainer1);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this._portComboBox);
+            this.Controls.Add(this._serialTextBox);
+            this.Controls.Add(this.battVoltLabel);
+            this.Controls.Add(this.label1);
             this.Name = "Form1";
             this.Text = "Avionics Telemetry";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-            this.splitContainer1.Panel1.ResumeLayout(false);
-            this.splitContainer1.Panel1.PerformLayout();
-            this.splitContainer1.Panel2.ResumeLayout(false);
-            this.splitContainer1.Panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
-            this.splitContainer1.ResumeLayout(false);
             this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         #endregion
 
-        private Label label1;
-        private TextBox serialTextBox;
+        private TextBox _serialTextBox;
         private Label battVoltLabel;
-        private SplitContainer splitContainer1;
+        private Label label1;
+        private ComboBox _portComboBox;
+        private Label label2;
     }
 }

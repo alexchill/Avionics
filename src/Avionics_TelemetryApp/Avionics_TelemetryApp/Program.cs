@@ -1,4 +1,4 @@
-namespace Arduino_Application
+namespace Avionics_TelemetryApp
 {
     internal static class Program
     {
