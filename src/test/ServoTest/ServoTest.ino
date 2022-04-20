@@ -69,5 +69,5 @@ void loop()
     Serial.print(", Step: ");
     Serial.println(step);
 
-    delay(100);
+    delay(30);
 }
