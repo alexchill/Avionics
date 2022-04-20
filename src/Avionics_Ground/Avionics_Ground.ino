@@ -65,8 +65,9 @@ void setup()
 
 void loop()
 {
-  static unsigned long loopStartTimeMS = millis();
-  static unsigned long lastSignalTestTime = millis();
+  static unsigned long loopStartTime = millis();
+  static unsigned long lastSignalTestTime = loopStartTime;
+  static unsigned long lastRadioMessageSentTime = loopStartTime;
   static int prevId = -1;
   static bool joystickArmed = false;
 
@@ -82,15 +83,16 @@ void loop()
 
   // Don't send joystick data for the first 10 seconds after USB initializes
   // due to spuriuos data from the joystick.
-  if (!joystickArmed && (millis() > loopStartTimeMS + 10000))
+  if (!joystickArmed && (millis() > loopStartTime + 10000))
   {
     joystickArmed = true;
     Serial.println("Joystick is armed");
   }
 
-  // Don't send joystick data unless it has changed and is armed
+  // Don't send joystick data unless joystick is armed and it has changed 
+  // (or has been 2 seconds since last message sent).
   GamePadEventData mostRecentEvent = JoystickEvents::mostRecentEvent;
-  if ((mostRecentEvent.id != prevId) && joystickArmed) {
+  if (joystickArmed && ((mostRecentEvent.id != prevId) || (millis() > lastRadioMessageSentTime + 4000))) {
     prevId = mostRecentEvent.id;
 
     Commands cmd;
@@ -108,6 +110,8 @@ void loop()
     {
       Serial.println("fail");
     }
+    
+    lastRadioMessageSentTime = millis();    
   }
 
   delay(50);
