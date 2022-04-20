@@ -7,14 +7,14 @@
 
 const unsigned long LastRadioMessageReceivedTimeoutMS = 10000;
 
-RF24 radio(9, 10);
+RF24 radio(3, 2);
 const uint8_t RadioAddress[6] = "00001";
 
 // Digital pin
 const int ServoRollPin = 12;
 const int ServoPitchPin = 11;
 const int ServoYawPin = 10;
-const int MotorPin = 5;
+const int MotorPin = 4;
 const int MotorInitThrottle = 0;
 
 // Analog pin
@@ -101,9 +101,10 @@ void setup()
 
 void loop()
 {
-  static unsigned long loopStart = millis();
-  static unsigned long lastSignalTestTime = millis();
-  static unsigned long lastRadioMsgReceivedMS = millis();
+  static unsigned long loopStartTime = millis();
+  static unsigned long lastSignalTestTime = loopStartTime;
+  static unsigned long lastRadioMessageReceivedTime = loopStartTime;
+  static unsigned long lastBatteryMeasureTime = loopStartTime;
   static bool inSafetyShutdownMode = false;
 
   unsigned long nowMs = millis();
@@ -119,28 +120,28 @@ void loop()
     Commands cmd;
     radio.read(&cmd, sizeof(Commands));
 
-    lastRadioMsgReceivedMS = millis();
+    lastRadioMessageReceivedTime = millis();
     inSafetyShutdownMode = false;
 
-    //        Serial.print("Roll: ");
-    //        Serial.println(cmd.roll);
+    Serial.print("Roll: ");
+    Serial.println(cmd.roll);
     servoRoll.write(cmd.roll);
 
     //        Serial.print("Pitch: ");
     //        Serial.println(cmd.pitch);
     servoPitch.write(cmd.pitch);
 
-    //        Serial.print("Yaw: ");
-    //        Serial.println(cmd.yaw);
+    //    Serial.print("Yaw: ");
+    //    Serial.println(cmd.yaw);
     servoYaw.write(cmd.yaw);
 
-    //        Serial.print("Throttle: ");
-    //        Serial.println(cmd.throttle);
-    motor1.write(0.5               );
+    //    Serial.print("Throttle: ");
+    //    Serial.println(cmd.throttle);
+    motor1.write(cmd.throttle);
   }
 
   // Safety shutdown of motor if lost connectiviy to ground
-  if (!inSafetyShutdownMode && (millis() > lastRadioMsgReceivedMS + LastRadioMessageReceivedTimeoutMS))
+  if (!inSafetyShutdownMode && (millis() > lastRadioMessageReceivedTime + LastRadioMessageReceivedTimeoutMS))
   {
     inSafetyShutdownMode = true;
 
@@ -154,9 +155,9 @@ void loop()
     Serial.println(" ms, going into safety shutdown mode");
   }
 
-  if (millis() > batteryTime) {
+  if (millis() > lastBatteryMeasureTime + 15000) {
     BatteryLoop();
-    batteryTime = batteryTime + 5000;
+    lastBatteryMeasureTime = millis();
   }
 
   delay(25);
