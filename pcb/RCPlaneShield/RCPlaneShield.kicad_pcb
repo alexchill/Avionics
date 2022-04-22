@@ -53,7 +53,7 @@
       (disableapertmacros false)
       (usegerberextensions false)
       (usegerberattributes false)
-      (usegerberadvancedattributes true)
+      (usegerberadvancedattributes false)
       (creategerberjobfile true)
       (svguseinch false)
       (svgprecision 6)
@@ -79,7 +79,7 @@
       (mirror false)
       (drillshape 0)
       (scaleselection 1)
-      (outputdirectory "Export/v1.0_2022.04.08/Gerber/01/")
+      (outputdirectory "Export/v1.1_2022.04.21/Gerber/01/")
     )
   )
 
