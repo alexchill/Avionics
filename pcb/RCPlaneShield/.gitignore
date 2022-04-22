@@ -3,3 +3,7 @@
 *-bak*
 *-backups/
 _autosave*
+*.gbr
+*.gbrjob
+*.drl
+*-drl_map.ps

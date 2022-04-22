@@ -1,0 +1,28 @@
+Drill report for RCPlaneShield.kicad_pcb
+Created on 4/21/2022 8:37:57 PM
+
+Copper Layer Stackup:
+    =============================================================
+    L1 :  F.Cu                      front
+    L2 :  B.Cu                      back
+
+
+Drill file 'RCPlaneShield-PTH.drl' contains
+    plated through holes:
+    =============================================================
+    T1  0.400mm  0.0157"  (7 holes)
+    T2  0.800mm  0.0315"  (13 holes)
+    T3  0.900mm  0.0354"  (4 holes)
+    T4  1.000mm  0.0394"  (49 holes)
+    T5  1.016mm  0.0400"  (86 holes)
+    T6  1.500mm  0.0591"  (2 holes)
+    T7  3.048mm  0.1200"  (6 holes)
+
+    Total plated holes count 167
+
+
+Drill file 'RCPlaneShield-NPTH.drl' contains
+    unplated through holes:
+    =============================================================
+
+    Total unplated holes count 0
