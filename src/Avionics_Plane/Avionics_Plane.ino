@@ -14,7 +14,7 @@ const uint8_t RadioAddress[6] = "00001";
 const int ServoRollPin = 12;
 const int ServoPitchPin = 11;
 const int ServoYawPin = 10;
-const int MotorPin = 4;
+const int MotorPin = 5;
 const int MotorInitThrottle = 0;
 
 // Analog pin
@@ -123,21 +123,12 @@ void loop()
     lastRadioMessageReceivedTime = millis();
     inSafetyShutdownMode = false;
 
-    Serial.print("Roll: ");
-    Serial.println(cmd.roll);
     servoRoll.write(cmd.roll);
-
-    //        Serial.print("Pitch: ");
-    //        Serial.println(cmd.pitch);
     servoPitch.write(cmd.pitch);
-
-    //    Serial.print("Yaw: ");
-    //    Serial.println(cmd.yaw);
     servoYaw.write(cmd.yaw);
-
-    //    Serial.print("Throttle: ");
-    //    Serial.println(cmd.throttle);
     motor1.write(cmd.throttle);
+    
+    printCommand(cmd);
   }
 
   // Safety shutdown of motor if lost connectiviy to ground
@@ -156,18 +147,27 @@ void loop()
   }
 
   if (millis() > lastBatteryMeasureTime + 15000) {
-    BatteryLoop();
+    float battVolt = measureBattVolt();
+    Serial.print("Battery Voltage: ");
+    Serial.println(battVolt);
     lastBatteryMeasureTime = millis();
   }
 
   delay(25);
 }
 
-void BatteryLoop()
-{
-  float battVolt = measureBattVolt();
-  Serial.print("Battery Voltage: ");
-  Serial.println(battVolt);
+void printCommand(Commands cmd) {
+  Serial.print("Roll: ");
+  Serial.print(cmd.roll);
+
+  Serial.print(", Pitch: ");
+  Serial.print(cmd.pitch);
+
+  Serial.print(", Yaw: ");
+  Serial.print(cmd.yaw);
+
+  Serial.print(", Throttle: ");
+  Serial.println(cmd.throttle);
 }
 
 float measureBattVolt()
