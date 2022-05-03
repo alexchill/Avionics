@@ -99,7 +99,8 @@ void loop()
     cmd.roll = map(JoystickEvents::mostRecentEvent.x, 0, 1023, 0, 180);
     cmd.pitch = map(JoystickEvents::mostRecentEvent.y, 0, 1023, 0, 180);
     cmd.yaw = map(JoystickEvents::mostRecentEvent.twist, 0, 255, 0, 180);
-    cmd.throttle = map(JoystickEvents::mostRecentEvent.slider, 0, 255, 180, 0);
+    cmd.throttle = map(JoystickEvents::mostRecentEvent.slider, 0, 255, 180, 13);
+    cmd.gear = JoystickEvents::mostRecentEvent.buttons_a;
 
     Serial.println(toString(&cmd));
 

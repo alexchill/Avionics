@@ -14,6 +14,9 @@ const uint8_t RadioAddress[6] = "00001";
 const int ServoRollPin = 12;
 const int ServoPitchPin = 11;
 const int ServoYawPin = 10;
+const int ServoNoseGearPin = 8;
+const int ServoLeftGearPin = 7;
+const int ServoRightGearPin = 6;
 const int MotorPin = 5;
 const int MotorInitThrottle = 0;
 
@@ -26,9 +29,15 @@ int ServoRollCenter = 90;
 int ServoPitchCenter = 90;
 int ServoYawCenter = 90;
 
+const int servoGearUp = 180;
+const int servoGearDown = 90;
+
 Servo servoRoll;
 Servo servoPitch;
 Servo servoYaw;
+Servo servoNoseGear;
+Servo servoLeftGear;
+Servo servoRightGear;
 Servo motor1;
 
 const float MAX_MEAS_VOLT = 5; // max voltage arduino analog input will handle
@@ -37,8 +46,8 @@ const float AIN_VOLT_PER_UNIT = MAX_MEAS_VOLT / pow(2, AIN_ADC_BITS);
 
 const float BATT_VOLT_MAX = 12;
 
-const float BATT_MEAS_R1 = 4.68e6;
-const float BATT_MEAS_R2 = 1.54e6;
+const float BATT_MEAS_R1 = 4.7e6;
+const float BATT_MEAS_R2 = 1.55e6;
 const float BATT_MEAS_RA = 100e6;
 
 // total resistance of resistor 2 and analog input impedance in parallel
@@ -47,6 +56,8 @@ const float BATT_MEAS_DIV = (BATT_MEAS_R1 / BATT_MEAS_R2T) + 1;
 const float BATT_MEAS_MAX_CURRENT = BATT_VOLT_MAX / (BATT_MEAS_R1 + BATT_MEAS_R2T);
 
 static int batteryTime = 5000;
+
+static unsigned long landingGearToggle;
 
 void setup()
 {
@@ -65,6 +76,15 @@ void setup()
 
   servoYaw.attach(ServoYawPin, 500, 2500);
   servoYaw.write(ServoYawCenter);
+
+  servoNoseGear.attach(ServoNoseGearPin, 500, 2500);
+  servoNoseGear.write(servoGearDown);
+
+  servoLeftGear.attach(ServoLeftGearPin, 500, 2500);
+  servoLeftGear.write(servoGearDown);
+
+  servoRightGear.attach(ServoRightGearPin, 500, 2500);
+  servoRightGear.write(servoGearDown);
 
   motor1.attach(MotorPin, 1000, 2000);
   motor1.write(MotorInitThrottle);
@@ -105,7 +125,12 @@ void loop()
   static unsigned long lastSignalTestTime = loopStartTime;
   static unsigned long lastRadioMessageReceivedTime = loopStartTime;
   static unsigned long lastBatteryMeasureTime = loopStartTime;
+  static unsigned long lastgearToggleTime = loopStartTime;
+
   static bool inSafetyShutdownMode = false;
+
+  static unsigned long movingTime = 5000;
+  static unsigned long moveStartTime;
 
   unsigned long nowMs = millis();
   if (nowMs > lastSignalTestTime + 30000)
@@ -127,8 +152,14 @@ void loop()
     servoPitch.write(cmd.pitch);
     servoYaw.write(cmd.yaw);
     motor1.write(cmd.throttle);
-    
-    printCommand(cmd);
+
+    if (cmd.gear == 2 && millis() > lastgearToggleTime + 500) {
+      landingGearToggle = !landingGearToggle;
+      Serial.println(landingGearToggle);
+      lastgearToggleTime = millis();
+    }
+
+    //printCommand(cmd);
   }
 
   // Safety shutdown of motor if lost connectiviy to ground
@@ -153,6 +184,29 @@ void loop()
     lastBatteryMeasureTime = millis();
   }
 
+  if (landingGearToggle == 1) {
+    int startAngle = servoGearDown;
+    int stopAngle  = servoGearUp;
+    unsigned long progress = millis() - lastgearToggleTime;
+    if (progress <= movingTime) {
+      long angle = map(progress, 0, movingTime, stopAngle, startAngle);
+      servoNoseGear.write(angle);
+      servoLeftGear.write(angle);
+      servoRightGear.write(angle);
+    }
+  }
+  else {
+    int startAngle = servoGearUp;
+    int stopAngle  = servoGearDown;
+    unsigned long progress = millis() - lastgearToggleTime;
+    if (progress <= movingTime) {
+      long angle = map(progress, 0, movingTime, stopAngle, startAngle);
+      servoNoseGear.write(angle);
+      servoLeftGear.write(angle);
+      servoRightGear.write(angle);
+    }
+  }
+
   delay(25);
 }
 
@@ -167,7 +221,10 @@ void printCommand(Commands cmd) {
   Serial.print(cmd.yaw);
 
   Serial.print(", Throttle: ");
-  Serial.println(cmd.throttle);
+  Serial.print(cmd.throttle);
+
+  Serial.print(", Gear: ");
+  Serial.println(cmd.gear);
 }
 
 float measureBattVolt()

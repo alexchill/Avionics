@@ -40,6 +40,7 @@ void JoystickEvents::OnGamePadChanged(const GamePadEventData *evt)
   uint16_t inputY = evt->y;
   uint16_t inputT = evt->twist;
   uint16_t inputS = evt->slider;
+  uint16_t inputBA = evt->buttons_a;
 
 //  Serial.print("ID: ");
 //  Serial.print(evt->id);

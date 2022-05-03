@@ -7,6 +7,7 @@ struct Commands
     byte pitch;
     byte yaw;
     byte throttle;
+    byte gear;
 };
 
 //void defaultValue(Commands *cmd) {
@@ -25,7 +26,8 @@ String toString(Commands *cmd) {
   str.concat(cmd->yaw);
   str.concat(", throttle: ");
   str.concat(cmd->throttle);
-
+  str.concat(", gear: ");
+  str.concat(cmd->gear);
   return str;
 }
 
