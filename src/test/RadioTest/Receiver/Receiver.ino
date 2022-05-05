@@ -2,24 +2,21 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-RF24 radio(9, 10);
+//RF24 radio(3, 2); // Mega
+RF24 radio(6, 7); // Uno
 
 const byte address[6] = "00001";
 
 void setup()
 {
     Serial.begin(115200);
-    while (!Serial)
-    {
+    while (!Serial) {
         // some boards need to wait to ensure access to serial over USB
     }
 
-    if (!radio.begin())
-    {
+    if (!radio.begin()) {
         Serial.println(F("radio hardware is not responding!!"));
-        while (1)
-        {
-        } // hold in infinite loop
+        while (1) {} // hold in infinite loop
     }
 
     Serial.println(F("radio hardware is responding!!"));
@@ -32,11 +29,12 @@ void setup()
 
 void loop()
 {
-
     if (radio.available())
     {
         char text[32] = "";
         radio.read(&text, sizeof(text));
         Serial.println(text);
     }
+
+    delay(100);
 }

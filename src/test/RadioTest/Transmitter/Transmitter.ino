@@ -2,14 +2,15 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-RF24 radio(6, 7);
+RF24 radio(3, 2); // Mega
+//RF24 radio(6, 7); // Uno
 
 const byte address[6] = "00001";
 
 void setup() {
   Serial.begin(115200);
   while (!Serial) {
-    // some boards need to wait to ensure access to serial over USB
+    // some boards need to wait to ensure access to serial over US
   }
 
   if (!radio.begin()) {
@@ -32,7 +33,7 @@ void loop() {
   }
   else
   {
-    Serial.println("fail");
+    Serial.println("transmit failure");
   }
 
   delay(5000);
