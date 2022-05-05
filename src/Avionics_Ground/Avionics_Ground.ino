@@ -28,6 +28,7 @@ const uint8_t RadioAddress[6] = "00001";
 struct telemetry
 {
     bool stale = true;
+    bool goodSignal = false;
     float batteryVoltage = 0;
 };
 
@@ -130,6 +131,8 @@ void loop()
                 {
                     Serial.print("Plane battery voltage: ");
                     Serial.println(telemetryData.batteryVoltage);
+                    Serial.print("Plane signal strength: ");
+                    Serial.println(telemetryData.goodSignal ? "strong > 64dBm" : "weak < 64dBm");
                 }
             }
         }

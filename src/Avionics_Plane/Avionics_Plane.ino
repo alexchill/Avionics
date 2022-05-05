@@ -14,6 +14,7 @@ const uint8_t RadioAddress[6] = "00001";
 struct telemetry
 {
     bool stale = true;
+    bool goodSignal = false;
     float batteryVoltage = 0;
 };
 
@@ -67,7 +68,7 @@ const float BATT_MEAS_R2T = (BATT_MEAS_RA * BATT_MEAS_R2) / (BATT_MEAS_RA - BATT
 const float BATT_MEAS_DIV = (BATT_MEAS_R1 / BATT_MEAS_R2T) + 1;
 const float BATT_MEAS_MAX_CURRENT = BATT_VOLT_MAX / (BATT_MEAS_R1 + BATT_MEAS_R2T);
 
-static int batteryTime = 5000;
+const int telemetryDataInterval = 10000; // 10 seconds
 
 static unsigned long landingGearToggle;
 
@@ -149,11 +150,12 @@ void loop()
     static unsigned long moveStartTime;
 
     unsigned long nowMs = millis();
-    if (nowMs > lastSignalTestTime + 30000)
+    if (nowMs > lastSignalTestTime + telemetryDataInterval)
     {
         lastSignalTestTime = nowMs;
-        bool goodSignal = radio.testRPD();
-        Serial.println(goodSignal ? "Strong signal > 64dBm" : "Weak signal < 64dBm");
+        telemetryData.goodSignal = radio.testRPD();
+        telemetryData.stale = false;
+        Serial.println(telemetryData.goodSignal ? "Strong signal > 64dBm" : "Weak signal < 64dBm");
     }
 
     if (radio.available())
@@ -202,7 +204,7 @@ void loop()
         Serial.println(" ms, going into safety shutdown mode");
     }
 
-    if (millis() > lastBatteryMeasureTime + 15000)
+    if (millis() > lastBatteryMeasureTime + telemetryDataInterval)
     {
         telemetryData.batteryVoltage = measureBattVolt();
         telemetryData.stale = false;
