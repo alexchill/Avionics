@@ -1,4 +1,5 @@
 #include <SPI.h>
+#include <printf.h>
 #include <nRF24L01.h>
 #include <RF24.h>
 #include <Servo.h>
@@ -10,6 +11,15 @@ const unsigned long LastRadioMessageReceivedTimeoutMS = 10000;
 RF24 radio(3, 2);
 const uint8_t RadioAddress[6] = "00001";
 
+struct telemetry
+{
+    bool stale = true;
+    float batteryVoltage = 0;
+};
+
+typedef struct telemetry Telemetry;
+Telemetry telemetryData;
+
 // Digital pin
 const int ServoRollPin = 12;
 const int ServoPitchPin = 11;
@@ -18,6 +28,8 @@ const int ServoNoseGearPin = 8;
 const int ServoLeftGearPin = 7;
 const int ServoRightGearPin = 6;
 const int MotorPin = 5;
+const int ModeSwitchPin = 0;
+
 const int MotorInitThrottle = 0;
 
 // Analog pin
@@ -61,193 +73,214 @@ static unsigned long landingGearToggle;
 
 void setup()
 {
-  Serial.begin(115200);
+    Serial.begin(115200);
+    printf_begin();
 
-  // some boards need to wait to ensure access to serial over USB
-  while (!Serial)
-    ;
-  Serial.println("Serial port connected, starting PLANE avionics setup...");
+    // some boards need to wait to ensure access to serial over USB
+    while (!Serial)
+        ;
+    Serial.println("Serial port connected, starting PLANE avionics setup...");
 
-  servoRoll.attach(ServoRollPin, 500, 2500);
-  servoRoll.write(ServoRollCenter);
+    pinMode(ModeSwitchPin, INPUT_PULLUP);
+    int mode = digitalRead(ModeSwitchPin);
+    Serial.print("Mode switch set to: ");
+    Serial.println(mode);
 
-  servoPitch.attach(ServoPitchPin, 500, 2500);
-  servoPitch.write(ServoPitchCenter);
+    servoRoll.attach(ServoRollPin, 500, 2500);
+    servoRoll.write(ServoRollCenter);
 
-  servoYaw.attach(ServoYawPin, 500, 2500);
-  servoYaw.write(ServoYawCenter);
+    servoPitch.attach(ServoPitchPin, 500, 2500);
+    servoPitch.write(ServoPitchCenter);
 
-  servoNoseGear.attach(ServoNoseGearPin, 500, 2500);
-  servoNoseGear.write(servoGearDown);
+    servoYaw.attach(ServoYawPin, 500, 2500);
+    servoYaw.write(ServoYawCenter);
 
-  servoLeftGear.attach(ServoLeftGearPin, 500, 2500);
-  servoLeftGear.write(servoGearDown);
+    servoNoseGear.attach(ServoNoseGearPin, 500, 2500);
+    servoNoseGear.write(servoGearDown);
 
-  servoRightGear.attach(ServoRightGearPin, 500, 2500);
-  servoRightGear.write(servoGearDown);
+    servoLeftGear.attach(ServoLeftGearPin, 500, 2500);
+    servoLeftGear.write(servoGearDown);
 
-  motor1.attach(MotorPin, 1000, 2000);
-  motor1.write(MotorInitThrottle);
+    servoRightGear.attach(ServoRightGearPin, 500, 2500);
+    servoRightGear.write(servoGearDown);
 
-  // Turn on by default, use buttons to turn on and off
-  digitalWrite(NavLedsPin, HIGH);
+    motor1.attach(MotorPin, 1000, 2000);
+    motor1.write(MotorInitThrottle);
 
-  if (!radio.begin())
-  {
-    Serial.println(F("Radio hardware is not responding!!"));
+    // Turn on by default, use buttons to turn on and off
+    digitalWrite(NavLedsPin, HIGH);
+
+    Serial.println("Setting up radio");
+    if (!radio.begin())
+    {
+        Serial.println(F("Radio hardware is not responding!!"));
+
+        // hold in infinite loop if radio is not responding
+        while (1)
+            ;
+    }
+
+    Serial.println(F("Radio hardware is responding!!"));
+
+    // Configure radio
+    radio.enableAckPayload();
+    radio.setDataRate(RF24_250KBPS);
+    radio.setPALevel(RF24_PA_MAX);
+    radio.openReadingPipe(1, RadioAddress);
+    radio.startListening();
+
+    Serial.println("Radio setup complete, configuration is:");
     radio.printPrettyDetails();
 
-    // hold in infinite loop if radio is not responding
-    while (1)
-      ;
-  }
-
-  Serial.println(F("Radio hardware is responding!!"));
-
-  // Configure radio
-  radio.setPALevel(RF24_PA_MAX);
-  // radio.setDataRate(RF24_250KBPS);
-
-  Serial.print("Radio channel is set to: ");
-  Serial.println(radio.getChannel());
-  Serial.print("Radio data rate is set to: ");
-  Serial.println(radio.getDataRate());
-
-  radio.openReadingPipe(0, RadioAddress);
-  radio.startListening();
-
-  checkBattMeasAnalogInVoltage();
+    checkBattMeasAnalogInVoltage();
 }
 
 void loop()
 {
-  static unsigned long loopStartTime = millis();
-  static unsigned long lastSignalTestTime = loopStartTime;
-  static unsigned long lastRadioMessageReceivedTime = loopStartTime;
-  static unsigned long lastBatteryMeasureTime = loopStartTime;
-  static unsigned long lastgearToggleTime = loopStartTime;
+    static unsigned long loopStartTime = millis();
+    static unsigned long lastSignalTestTime = loopStartTime;
+    static unsigned long lastRadioMessageReceivedTime = loopStartTime;
+    static unsigned long lastBatteryMeasureTime = loopStartTime;
+    static unsigned long lastgearToggleTime = loopStartTime;
 
-  static bool inSafetyShutdownMode = false;
+    static bool inSafetyShutdownMode = false;
 
-  static unsigned long movingTime = 5000;
-  static unsigned long moveStartTime;
+    static unsigned long movingTime = 5000;
+    static unsigned long moveStartTime;
 
-  unsigned long nowMs = millis();
-  if (nowMs > lastSignalTestTime + 30000)
-  {
-    lastSignalTestTime = nowMs;
-    bool goodSignal = radio.testRPD();
-    Serial.println(goodSignal ? "Strong signal > 64dBm" : "Weak signal < 64dBm");
-  }
-
-  if (radio.available())
-  {
-    Commands cmd;
-    radio.read(&cmd, sizeof(Commands));
-
-    lastRadioMessageReceivedTime = millis();
-    inSafetyShutdownMode = false;
-
-    servoRoll.write(cmd.roll);
-    servoPitch.write(cmd.pitch);
-    servoYaw.write(cmd.yaw);
-    motor1.write(cmd.throttle);
-
-    if (cmd.gear == 2 && millis() > lastgearToggleTime + 500) {
-      landingGearToggle = !landingGearToggle;
-      Serial.println(landingGearToggle);
-      lastgearToggleTime = millis();
+    unsigned long nowMs = millis();
+    if (nowMs > lastSignalTestTime + 30000)
+    {
+        lastSignalTestTime = nowMs;
+        bool goodSignal = radio.testRPD();
+        Serial.println(goodSignal ? "Strong signal > 64dBm" : "Weak signal < 64dBm");
     }
 
-    //printCommand(cmd);
-  }
+    if (radio.available())
+    {
+        Commands cmd;
+        radio.read(&cmd, sizeof(Commands));
 
-  // Safety shutdown of motor if lost connectiviy to ground
-  if (!inSafetyShutdownMode && (millis() > lastRadioMessageReceivedTime + LastRadioMessageReceivedTimeoutMS))
-  {
-    inSafetyShutdownMode = true;
+        // load the payload for the next time
+        radio.writeAckPayload(1, &telemetryData, sizeof(telemetryData));
+        Serial.print("Telemetry stale: ");
+        Serial.println(telemetryData.stale);
+        Serial.print("Plane battery voltage: ");
+        Serial.println(telemetryData.batteryVoltage);        
+        telemetryData.stale = true;
 
-    servoRoll.write(ServoRollCenter);
-    servoPitch.write(ServoPitchCenter);
-    servoYaw.write(ServoYawCenter);
-    motor1.write(MotorInitThrottle);
+        lastRadioMessageReceivedTime = millis();
+        inSafetyShutdownMode = false;
 
-    Serial.print("Radio message not received for >= ");
-    Serial.print(LastRadioMessageReceivedTimeoutMS);
-    Serial.println(" ms, going into safety shutdown mode");
-  }
+        servoRoll.write(cmd.roll);
+        servoPitch.write(cmd.pitch);
+        servoYaw.write(cmd.yaw);
+        motor1.write(cmd.throttle);
 
-  if (millis() > lastBatteryMeasureTime + 15000) {
-    float battVolt = measureBattVolt();
-    Serial.print("Battery Voltage: ");
-    Serial.println(battVolt);
-    lastBatteryMeasureTime = millis();
-  }
+        if (cmd.gear == 2 && millis() > lastgearToggleTime + 500)
+        {
+            landingGearToggle = !landingGearToggle;
+            Serial.println(landingGearToggle);
+            lastgearToggleTime = millis();
+        }
 
-  if (landingGearToggle == 1) {
-    int startAngle = servoGearDown;
-    int stopAngle  = servoGearUp;
-    unsigned long progress = millis() - lastgearToggleTime;
-    if (progress <= movingTime) {
-      long angle = map(progress, 0, movingTime, stopAngle, startAngle);
-      servoNoseGear.write(angle);
-      servoLeftGear.write(angle);
-      servoRightGear.write(angle);
+        printCommand(cmd);
     }
-  }
-  else {
-    int startAngle = servoGearUp;
-    int stopAngle  = servoGearDown;
-    unsigned long progress = millis() - lastgearToggleTime;
-    if (progress <= movingTime) {
-      long angle = map(progress, 0, movingTime, stopAngle, startAngle);
-      servoNoseGear.write(angle);
-      servoLeftGear.write(angle);
-      servoRightGear.write(angle);
-    }
-  }
 
-  delay(25);
+    // Safety shutdown of motor if lost connectiviy to ground
+    if (!inSafetyShutdownMode && (millis() > lastRadioMessageReceivedTime + LastRadioMessageReceivedTimeoutMS))
+    {
+        inSafetyShutdownMode = true;
+
+        servoRoll.write(ServoRollCenter);
+        servoPitch.write(ServoPitchCenter);
+        servoYaw.write(ServoYawCenter);
+        motor1.write(MotorInitThrottle);
+
+        Serial.print("Radio message not received for >= ");
+        Serial.print(LastRadioMessageReceivedTimeoutMS);
+        Serial.println(" ms, going into safety shutdown mode");
+    }
+
+    if (millis() > lastBatteryMeasureTime + 15000)
+    {
+        telemetryData.batteryVoltage = measureBattVolt();
+        telemetryData.stale = false;
+        Serial.print("Battery Voltage: ");
+        Serial.println(telemetryData.batteryVoltage);
+        lastBatteryMeasureTime = millis();
+    }
+
+    // handle landing gear up/down
+    if (landingGearToggle == 1)
+    {
+        int startAngle = servoGearDown;
+        int stopAngle = servoGearUp;
+        unsigned long progress = millis() - lastgearToggleTime;
+        if (progress <= movingTime)
+        {
+            long angle = map(progress, 0, movingTime, stopAngle, startAngle);
+            servoNoseGear.write(angle);
+            servoLeftGear.write(angle);
+            servoRightGear.write(angle);
+        }
+    }
+    else
+    {
+        int startAngle = servoGearUp;
+        int stopAngle = servoGearDown;
+        unsigned long progress = millis() - lastgearToggleTime;
+        if (progress <= movingTime)
+        {
+            long angle = map(progress, 0, movingTime, stopAngle, startAngle);
+            servoNoseGear.write(angle);
+            servoLeftGear.write(angle);
+            servoRightGear.write(angle);
+        }
+    }
+
+    delay(25);
 }
 
-void printCommand(Commands cmd) {
-  Serial.print("Roll: ");
-  Serial.print(cmd.roll);
+void printCommand(Commands cmd)
+{
+    Serial.print("Roll: ");
+    Serial.print(cmd.roll);
 
-  Serial.print(", Pitch: ");
-  Serial.print(cmd.pitch);
+    Serial.print(", Pitch: ");
+    Serial.print(cmd.pitch);
 
-  Serial.print(", Yaw: ");
-  Serial.print(cmd.yaw);
+    Serial.print(", Yaw: ");
+    Serial.print(cmd.yaw);
 
-  Serial.print(", Throttle: ");
-  Serial.print(cmd.throttle);
+    Serial.print(", Throttle: ");
+    Serial.print(cmd.throttle);
 
-  Serial.print(", Gear: ");
-  Serial.println(cmd.gear);
+    Serial.print(", Gear: ");
+    Serial.println(cmd.gear);
 }
 
 float measureBattVolt()
 {
-  int val = analogRead(BATT_MEAS_PIN);
-  return computeBattVolt(val);
+    int val = analogRead(BATT_MEAS_PIN);
+    return computeBattVolt(val);
 }
 
 float computeBattVolt(int adValue)
 {
-  float measVolt = adValue * AIN_VOLT_PER_UNIT;
-  float battVolt = measVolt * BATT_MEAS_DIV;
-  return battVolt;
+    float measVolt = adValue * AIN_VOLT_PER_UNIT;
+    float battVolt = measVolt * BATT_MEAS_DIV;
+    return battVolt;
 }
 
 void checkBattMeasAnalogInVoltage()
 {
-  float maxVoltMeasured = BATT_MEAS_MAX_CURRENT * BATT_MEAS_R2T;
-  Serial.print("Max voltage measured: ");
-  Serial.println(maxVoltMeasured);
-  if (maxVoltMeasured > MAX_MEAS_VOLT)
-  {
-    Serial.print("Battery monitor resistor values allow max analog input voltage to be exceeded: ");
+    float maxVoltMeasured = BATT_MEAS_MAX_CURRENT * BATT_MEAS_R2T;
+    Serial.print("Max voltage measured: ");
     Serial.println(maxVoltMeasured);
-  }
+    if (maxVoltMeasured > MAX_MEAS_VOLT)
+    {
+        Serial.print("Battery monitor resistor values allow max analog input voltage to be exceeded: ");
+        Serial.println(maxVoltMeasured);
+    }
 }
