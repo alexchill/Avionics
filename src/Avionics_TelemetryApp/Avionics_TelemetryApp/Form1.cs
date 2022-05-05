@@ -18,7 +18,7 @@ namespace Avionics_TelemetryApp
         {
             string line = _serialPort.ReadLine();
 
-            if (line.StartsWith("Slider val:"))
+            if (line.StartsWith("Plane battery voltage: "))
             {
                 string[] parts = line.Split(":");
                 string voltage = parts[1].Trim();
